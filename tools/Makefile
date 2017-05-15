@@ -18,7 +18,7 @@ base:
 
 check:
 	@-mkdir -p $(LOGS)
-	@pylint --rcfile .pylintrc $(APP) | tee $(LOGS)/pylint.txt
+	@pylint --rcfile .pylintrc $(wildcard *.py) | tee $(LOGS)/pylint.txt
 
 edit:
 	@$(EDITOR) .
