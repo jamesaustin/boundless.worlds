@@ -1,7 +1,7 @@
 #!/usr/bin/env make
 
 APP=patterns.py
-OPTIONS=--path output
+OPTIONS=--path output patterns.json
 LOGS=logs
 OPEN=open
 GITHUB_URL=https://github.com/turbulenz/boundless.worlds

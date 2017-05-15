@@ -2,10 +2,9 @@
 import logging
 
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
-from json import dumps as json_dumps
+from json import dumps as json_dumps, load as json_load
 from random import seed as random_seed, random as random_random, uniform as random_uniform, choice as random_choice
 from math import tau, pi, cos as mcos, sin as msin, pow as mpow, sqrt as msqrt
-from functools import partial
 from os.path import join as path_join
 from os import makedirs as os_makedirs
 
@@ -20,15 +19,10 @@ import cairocffi as cairo
 
 LOG = logging.getLogger(__name__)
 
-def frange(start, end, step):
-    if start < end:
-        while start < end:
-            yield start
-            start += step
-    elif start > end:
-        while start > end:
-            yield start
-            start += step
+REGISTERED_FUNCTIONS = {}
+def register(fn):
+    REGISTERED_FUNCTIONS[fn.__name__] = fn
+    return fn
 
 # TODO:
 # * https://en.wikipedia.org/wiki/Ammann%E2%80%93Beenker_tiling
@@ -43,6 +37,16 @@ def frange(start, end, step):
 # * https://en.wikipedia.org/wiki/Rep-tile
 # * https://en.wikipedia.org/wiki/Self-tiling_tile_set
 # * https://en.wikipedia.org/wiki/Wang_tile
+
+def frange(start, end, step):
+    if start < end:
+        while start < end:
+            yield start
+            start += step
+    elif start > end:
+        while start > end:
+            yield start
+            start += step
 
 def _draw_centre_gradient(draw):
     radial_gradient = cairo.RadialGradient(0, 0, 0, 0, 0, 1)
@@ -61,6 +65,7 @@ def _draw_centre_discrete(draw, steps=10):
 
 #######################################################################################################################
 
+@register
 def archimedean_spiral(draw, anti_clockwise=False, radial=True, loops=5, line_width=0.05, iterations=10000):
     max_angle = loops * tau
     step_angle = max_angle / iterations
@@ -88,10 +93,12 @@ def archimedean_spiral(draw, anti_clockwise=False, radial=True, loops=5, line_wi
     draw.set_line_cap(cairo.LINE_CAP_ROUND)
     draw.stroke()
 
+@register
 def archimedean_double_spiral(draw, **kwargs):
     archimedean_spiral(draw, **kwargs)
     archimedean_spiral(draw, anti_clockwise=True, **kwargs)
 
+@register
 def theodorean_spiral(draw, resolution=0.1, number=111):
     # https://en.wikipedia.org/wiki/Spiral_of_Theodorus
     triangles = [(resolution, 0, resolution, resolution)]
@@ -111,14 +118,17 @@ def theodorean_spiral(draw, resolution=0.1, number=111):
         draw.fill()
         grey += 1.0 / number
 
+@register
 def triple_spiral():
     # https://en.wikipedia.org/wiki/Triple_spiral
     pass
 
+@register
 def borjgalo():
     # https://en.wikipedia.org/wiki/Borjgali
     pass
 
+@register
 def radials(draw, spokes=16, line_width=0.05, truncate=0):
     _draw_centre_gradient(draw)
     radius = 1.0 - line_width
@@ -133,6 +143,7 @@ def radials(draw, spokes=16, line_width=0.05, truncate=0):
     draw.set_line_cap(cairo.LINE_CAP_SQUARE)
     draw.stroke()
 
+@register
 def random_spots(draw, iterations=1000, max_size=0.1, min_size=0.01, random=True):
     bubbles = []
     while len(bubbles) < iterations:
@@ -153,6 +164,7 @@ def random_spots(draw, iterations=1000, max_size=0.1, min_size=0.01, random=True
         draw.set_source_rgb(grey, grey, grey)
         draw.fill()
 
+@register
 def truchet_triangles(draw, resolution=0.1):
     # https://en.wikipedia.org/wiki/Truchet_tiles
     orientations = [1, 2, 3, 4]
@@ -183,6 +195,7 @@ def truchet_triangles(draw, resolution=0.1):
     draw.set_source_rgb(1, 1, 1)
     draw.fill()
 
+@register
 def truchet_quarter_cirlces(draw, resolution=0.1, line_width=0.025):
     # https://en.wikipedia.org/wiki/Truchet_tiles
     orientations = [1, 2]
@@ -204,6 +217,7 @@ def truchet_quarter_cirlces(draw, resolution=0.1, line_width=0.025):
     draw.set_line_width(line_width)
     draw.stroke()
 
+@register
 def truchet_diagonals(draw, resolution=0.1, line_width=0.05):
     # https://en.wikipedia.org/wiki/Truchet_tiles
     orientations = [1, 2]
@@ -222,6 +236,7 @@ def truchet_diagonals(draw, resolution=0.1, line_width=0.05):
     draw.set_line_cap(cairo.LINE_CAP_ROUND)
     draw.stroke()
 
+@register
 def truchet_variation(draw, resolution=0.1, line_width=0.015):
     # https://en.wikipedia.org/wiki/Truchet_tiles
     orientations = [1, 2, 3, 4, 5, 6, 7]
@@ -273,6 +288,7 @@ def truchet_variation(draw, resolution=0.1, line_width=0.015):
     draw.set_line_join(cairo.LINE_JOIN_BEVEL)
     draw.stroke()
 
+@register
 def truchet_12_variation(draw, resolution=0.1, line_width=0.025):
     # https://en.wikipedia.org/wiki/Truchet_tiles
     orientations = [1, 2]
@@ -346,8 +362,9 @@ def truchet_12_variation(draw, resolution=0.1, line_width=0.025):
 
 def parse_args():
     parser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--path')
-    parser.add_argument('--seed', default='Boundless')
+    parser.add_argument('config', help='Configuration JSON')
+    parser.add_argument('--path', help='Output path')
+    parser.add_argument('--seed', default='Boundless', help='Generation seed')
     parser.add_argument('-v', '--verbose', action='store_true')
     parser.add_argument('-d', '--debug', action='store_true')
     args = parser.parse_args()
@@ -366,39 +383,11 @@ def parse_args():
 def main():
     args = parse_args()
 
+    with open(args.config) as f:
+        configs = json_load(f)
+
     filenames = []
-    for n, pattern_fn in enumerate([
-            archimedean_spiral,
-            partial(archimedean_spiral, radial=False),
-            partial(archimedean_spiral, loops=50, line_width=0.01),
-            partial(archimedean_spiral, radial=False, loops=50, line_width=0.01),
-            partial(archimedean_spiral, line_width=0.15),
-            partial(archimedean_spiral, radial=False, line_width=0.15),
-            partial(archimedean_spiral, loops=10),
-            partial(archimedean_spiral, radial=False, loops=10),
-            archimedean_double_spiral,
-            partial(archimedean_double_spiral, radial=False),
-            partial(archimedean_double_spiral, loops=25, line_width=0.01),
-            partial(archimedean_double_spiral, radial=False, loops=25, line_width=0.01),
-            theodorean_spiral,
-            radials,
-            partial(radials, truncate=0.12),
-            partial(radials, spokes=15*4, line_width=0.02),
-            partial(radials, spokes=15*4, line_width=0.02, truncate=0.2),
-            random_spots,
-            partial(random_spots, max_size=0.2, random=False),
-            truchet_triangles,
-            partial(truchet_triangles, resolution=0.02),
-            truchet_quarter_cirlces,
-            partial(truchet_quarter_cirlces, resolution=0.02, line_width=0.005),
-            truchet_diagonals,
-            partial(truchet_diagonals, line_width=0.01),
-            partial(truchet_diagonals, resolution=0.02, line_width=0.002),
-            truchet_variation,
-            partial(truchet_variation, resolution=0.02, line_width=0.002),
-            truchet_12_variation,
-            partial(truchet_12_variation, resolution=0.02, line_width=0.002),
-        ]):
+    for n, config in enumerate(configs):
         width, height = 1000, 1000
         image = cairo.ImageSurface(cairo.FORMAT_ARGB32, width, height)
         draw = cairo.Context(image)
@@ -413,7 +402,8 @@ def main():
         draw.scale(width / 2.0, height / 2.0)
 
         random_seed(args.seed)
-        pattern_fn(draw)
+        fn_name = config.pop('_fn')
+        REGISTERED_FUNCTIONS[fn_name](draw, **config)
 
         if args.debug:
             # Draw a red grid with resolution 0.1
@@ -426,11 +416,7 @@ def main():
             draw.set_source_rgb(1, 0, 0)
             draw.stroke()
 
-        try:
-            name = pattern_fn.__name__
-        except AttributeError:
-            name = pattern_fn.func.__name__
-        filename = '{:03}.{}.png'.format(n, name)
+        filename = '{:03}.{}.png'.format(n, fn_name)
         if args.path:
             os_makedirs(args.path, exist_ok=True)
             filename = path_join(args.path, filename)

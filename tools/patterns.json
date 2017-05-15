@@ -1,0 +1,128 @@
+[
+  {
+    "_fn": "archimedean_spiral"
+  },
+  {
+    "_fn": "archimedean_spiral",
+    "radial": false
+  },
+  {
+    "_fn": "archimedean_spiral",
+    "loops": 50,
+    "line_width": 0.01
+  },
+  {
+    "_fn": "archimedean_spiral",
+    "radial": false,
+    "loops": 50,
+    "line_width": 0.01
+  },
+  {
+    "_fn": "archimedean_spiral",
+    "line_width": 0.15
+  },
+  {
+    "_fn": "archimedean_spiral",
+    "radial": false,
+    "line_width": 0.15
+  },
+  {
+    "_fn": "archimedean_spiral",
+    "loops": 10
+  },
+  {
+    "_fn": "archimedean_spiral",
+    "radial": false,
+    "loops": 10
+  },
+  {
+    "_fn": "archimedean_double_spiral"
+  },
+  {
+    "_fn": "archimedean_double_spiral",
+    "radial": false
+  },
+  {
+    "_fn": "archimedean_double_spiral",
+    "loops": 25,
+    "line_width": 0.01
+  },
+  {
+    "_fn": "archimedean_double_spiral",
+    "radial": false,
+    "loops": 25,
+    "line_width": 0.01
+  },
+  {
+    "_fn": "theodorean_spiral"
+  },
+  {
+    "_fn": "radials"
+  },
+  {
+    "_fn": "radials",
+    "truncate": 0.12
+  },
+  {
+    "_fn": "radials",
+    "spokes": 60,
+    "line_width": 0.02
+  },
+  {
+    "_fn": "radials",
+    "spokes": 60,
+    "line_width": 0.02,
+    "truncate": 0.2
+  },
+  {
+    "_fn": "random_spots"
+  },
+  {
+    "_fn": "random_spots",
+    "max_size": 0.2,
+    "random": false
+  },
+  {
+    "_fn": "truchet_triangles"
+  },
+  {
+    "_fn": "truchet_triangles",
+    "resolution": 0.02
+  },
+  {
+    "_fn": "truchet_quarter_cirlces"
+  },
+  {
+    "_fn": "truchet_quarter_cirlces",
+    "resolution": 0.02,
+    "line_width": 0.005
+  },
+  {
+    "_fn": "truchet_diagonals"
+  },
+  {
+    "_fn": "truchet_diagonals",
+    "line_width": 0.01
+  },
+  {
+    "_fn": "truchet_diagonals",
+    "resolution": 0.02,
+    "line_width": 0.002
+  },
+  {
+    "_fn": "truchet_variation"
+  },
+  {
+    "_fn": "truchet_variation",
+    "resolution": 0.02,
+    "line_width": 0.002
+  },
+  {
+    "_fn": "truchet_12_variation"
+  },
+  {
+    "_fn": "truchet_12_variation",
+    "resolution": 0.02,
+    "line_width": 0.002
+  }
+]
