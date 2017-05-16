@@ -124,5 +124,22 @@
     "_fn": "truchet_12_variation",
     "resolution": 0.02,
     "line_width": 0.002
+  },
+  {
+    "_fn": "ring_blocks",
+    "block_max_width": 0.05
+  },
+  {
+    "_fn": "ring_blocks",
+    "block_max_width": 0.02,
+    "ring_depth_rate": 0.9
+  },
+  {
+      "_fn": "archimedean_blocks"
+  },
+  {
+      "_fn": "archimedean_blocks",
+      "ring_depth_rate": 0.8,
+      "blocks_per_run": 50
   }
 ]

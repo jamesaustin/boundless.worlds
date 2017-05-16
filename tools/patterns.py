@@ -4,7 +4,7 @@ import logging
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 from json import dumps as json_dumps, load as json_load
 from random import seed as random_seed, random as random_random, uniform as random_uniform, choice as random_choice
-from math import tau, pi, cos as mcos, sin as msin, pow as mpow, sqrt as msqrt
+from math import tau, pi, cos as mcos, sin as msin, pow as mpow, sqrt as msqrt, floor as mfloor
 from os.path import join as path_join
 from os import makedirs as os_makedirs
 
@@ -20,9 +20,9 @@ import cairocffi as cairo
 LOG = logging.getLogger(__name__)
 
 REGISTERED_FUNCTIONS = {}
-def register(fn):
-    REGISTERED_FUNCTIONS[fn.__name__] = fn
-    return fn
+def register(func):
+    REGISTERED_FUNCTIONS[func.__name__] = func
+    return func
 
 # TODO:
 # * https://en.wikipedia.org/wiki/Ammann%E2%80%93Beenker_tiling
@@ -47,6 +47,9 @@ def frange(start, end, step):
         while start > end:
             yield start
             start += step
+
+def polar_to_xy(radius, angle):
+    return radius * mcos(angle), radius * msin(angle)
 
 def _draw_centre_gradient(draw):
     radial_gradient = cairo.RadialGradient(0, 0, 0, 0, 0, 1)
@@ -357,6 +360,94 @@ def truchet_12_variation(draw, resolution=0.1, line_width=0.025):
     draw.set_line_cap(cairo.LINE_CAP_ROUND)
     draw.stroke()
 
+@register
+def truchet_diagonal_strips(draw, resolution=0.1, line_width=0.01):
+    # https://en.wikipedia.org/wiki/Truchet_tiles
+    orientations = [1, 2]
+    r = resolution
+    for x in frange(-1, 1, r):
+        for y in frange(-1, 1, r):
+            selection = random_choice(orientations)
+            if selection == 1:
+                for s in frange(line_width, resolution, 2.0 * line_width):
+                    draw.move_to(x + s, y)
+                    draw.line_to(x, y + s)
+                    draw.move_to(x + resolution - s, y + resolution)
+                    draw.line_to(x + resolution, y + resolution - s)
+            elif selection == 2:
+                for s in frange(line_width, resolution, 2.0 * line_width):
+                    draw.move_to(x + s, y)
+                    draw.line_to(x + resolution, y + resolution - s)
+                    draw.move_to(x, y + s)
+                    draw.line_to(x + resolution - s, y + resolution)
+    draw.set_source_rgb(1, 1, 1)
+    draw.set_line_width(line_width)
+    draw.set_line_cap(cairo.LINE_CAP_ROUND)
+    draw.stroke()
+
+@register
+def ring_blocks(draw, radial=False, rings=10, ring_depth_rate=0.85, inner_radius=0.4, block_max_width=0.05):
+    ring_depth = (1.0 - inner_radius) / rings
+    block_depth = ring_depth * ring_depth_rate
+
+    for radius in frange(inner_radius, 1.0, ring_depth):
+        circumference = tau * radius
+        block_per_ring = mfloor(circumference / block_max_width)
+        angle_per_block = (tau / block_per_ring) * 0.8
+
+        for angle in frange(0, tau, tau / block_per_ring):
+            draw.move_to(*polar_to_xy(radius, angle))
+            draw.line_to(*polar_to_xy(radius + block_depth, angle))
+            draw.line_to(*polar_to_xy(radius + block_depth, angle + angle_per_block))
+            draw.line_to(*polar_to_xy(radius, angle + angle_per_block))
+            draw.line_to(*polar_to_xy(radius, angle))
+
+    if radial:
+        radial_gradient = cairo.RadialGradient(0, 0, 0, 0, 0, 1)
+        radial_gradient.add_color_stop_rgb(0, 1, 1, 1)
+        radial_gradient.add_color_stop_rgb(1, 0, 0, 0)
+        draw.set_source(radial_gradient)
+    else:
+        draw.set_source_rgb(1, 1, 1)
+    draw.fill()
+
+@register
+def archimedean_blocks(draw, radial=False, loops=12, ring_depth_rate=0.6, inner_radius=0.25,
+                       block_max_width=0.03, block_min_width=0.005, blocks_per_run=30):
+
+    ring_depth = (1.0 - inner_radius) / (loops + 1)
+    amplitude = ring_depth / tau
+    block_depth = ring_depth * ring_depth_rate
+
+    angle = 0.0
+    block_run_counter = 0
+    while angle < loops * tau:
+        # Take current radius to determine the additional block angle
+        radius = inner_radius + amplitude * angle
+        circumference = tau * radius
+        # How many blocks fit into a ring at the current radius?
+        max_angle_step = tau / (circumference / block_max_width)
+        min_angle_step = tau / (circumference / block_min_width)
+        angle_block = (max_angle_step - (max_angle_step - min_angle_step) * \
+            (block_run_counter % blocks_per_run / blocks_per_run)) * 0.9
+
+        draw.move_to(*polar_to_xy(radius, angle))
+        draw.line_to(*polar_to_xy(radius + block_depth, angle))
+        draw.line_to(*polar_to_xy(radius + block_depth, angle + angle_block))
+        draw.line_to(*polar_to_xy(radius, angle + angle_block))
+        draw.line_to(*polar_to_xy(radius, angle))
+
+        angle += max_angle_step
+        block_run_counter += 1
+
+    if radial:
+        radial_gradient = cairo.RadialGradient(0, 0, 0, 0, 0, 1)
+        radial_gradient.add_color_stop_rgb(0, 1, 1, 1)
+        radial_gradient.add_color_stop_rgb(1, 0, 0, 0)
+        draw.set_source(radial_gradient)
+    else:
+        draw.set_source_rgb(1, 1, 1)
+    draw.fill()
 
 #######################################################################################################################
 
@@ -414,6 +505,13 @@ def main():
                 draw.line_to(offset, 1)
             draw.set_line_width(0.002)
             draw.set_source_rgb(1, 0, 0)
+            draw.stroke()
+
+            # Draw a blue radial grid
+            for angle in frange(0, tau, tau / 32.0):
+                draw.move_to(*polar_to_xy(0.1, angle))
+                draw.line_to(*polar_to_xy(1.0, angle))
+            draw.set_source_rgb(0, 0, 1)
             draw.stroke()
 
         filename = '{:03}.{}.png'.format(n, fn_name)
