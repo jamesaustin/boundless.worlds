@@ -490,7 +490,7 @@ def main():
 
         # Translate the context into [-1,1]x[-1,1]
         draw.translate(width / 2.0, height / 2.0)
-        draw.scale(width / 2.0, height / 2.0)
+        draw.scale(min(width, height) / 2.0, min(width, height) / 2.0)
 
         random_seed(args.seed)
         fn_name = config.pop('_fn')
