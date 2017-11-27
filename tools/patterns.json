@@ -141,5 +141,40 @@
       "_fn": "archimedean_blocks",
       "ring_depth_rate": 0.8,
       "blocks_per_run": 50
+  },
+  {
+      "_fn": "ring_wedges"
+  },
+  {
+      "_fn": "ring_wedges",
+      "point_in": false
+  },
+  {
+      "_fn": "ring_wedges",
+      "alternate": true
+  },
+  {
+      "_fn": "ring_wedges",
+      "inner_radius": 0.1,
+      "rings": 15,
+      "point_in": false
+  },
+  {
+      "_fn": "ring_wedges",
+      "inner_radius": 0.1,
+      "rings": 15,
+      "point_in": true
+  },
+  {
+      "_fn": "ring_wedges",
+      "inner_radius": 0.1,
+      "rings": 15,
+      "alternate": true
+  },
+  {
+      "_fn": "triangle"
+  },
+  {
+      "_fn": "fern"
   }
 ]

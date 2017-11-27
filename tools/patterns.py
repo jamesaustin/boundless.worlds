@@ -449,6 +449,80 @@ def archimedean_blocks(draw, radial=False, loops=12, ring_depth_rate=0.6, inner_
         draw.set_source_rgb(1, 1, 1)
     draw.fill()
 
+@register
+def ring_wedges(draw, radial=False, rings=10, ring_depth_rate=0.85, inner_radius=0.4, block_max_width=0.05,
+                point_in=True, alternate=False):
+    ring_depth = (1.0 - inner_radius) / rings
+    block_depth = ring_depth * ring_depth_rate
+
+    for radius in frange(inner_radius, 1.0, ring_depth):
+        circumference = tau * radius
+        block_per_ring = mfloor(circumference / block_max_width)
+        angle_per_block = (tau / block_per_ring) * 0.8
+
+        if alternate:
+            for angle in frange(0, tau, tau / block_per_ring):
+                width_angle = angle_per_block * 0.8
+                draw.move_to(*polar_to_xy(radius, angle + (width_angle * 0.5)))
+                draw.line_to(*polar_to_xy(radius + block_depth, angle))
+                draw.line_to(*polar_to_xy(radius + block_depth, angle + width_angle))
+                draw.line_to(*polar_to_xy(radius, angle + (width_angle * 0.5)))
+
+                angle += (angle_per_block - width_angle) + (width_angle * 0.5)
+                draw.move_to(*polar_to_xy(radius, angle))
+                draw.line_to(*polar_to_xy(radius + block_depth, angle + (width_angle * 0.5)))
+                draw.line_to(*polar_to_xy(radius, angle + width_angle))
+                draw.line_to(*polar_to_xy(radius, angle))
+        else:
+            for angle in frange(0, tau, tau / block_per_ring):
+                if point_in:
+                    draw.move_to(*polar_to_xy(radius, angle + (angle_per_block * 0.5)))
+                    draw.line_to(*polar_to_xy(radius + block_depth, angle))
+                    draw.line_to(*polar_to_xy(radius + block_depth, angle + angle_per_block))
+                    draw.line_to(*polar_to_xy(radius, angle + (angle_per_block * 0.5)))
+                else:
+                    draw.move_to(*polar_to_xy(radius, angle))
+                    draw.line_to(*polar_to_xy(radius + block_depth, angle + (angle_per_block * 0.5)))
+                    draw.line_to(*polar_to_xy(radius, angle + angle_per_block))
+                    draw.line_to(*polar_to_xy(radius, angle))
+
+    if radial:
+        radial_gradient = cairo.RadialGradient(0, 0, 0, 0, 0, 1)
+        radial_gradient.add_color_stop_rgb(0, 1, 1, 1)
+        radial_gradient.add_color_stop_rgb(1, 0, 0, 0)
+        draw.set_source(radial_gradient)
+    else:
+        draw.set_source_rgb(1, 1, 1)
+    draw.fill()
+
+@register
+def triangle(draw, iterations=50000, radius=0.002, proportion=0.5):
+    points = [(0, -0.9), (0.9, 0.9), (-0.9, 0.9)]
+    last = (random_random(), random_random())
+    draw.set_source_rgb(1, 1, 1)
+    for _ in range(iterations):
+        direction = random_choice(points)
+        last = ((direction[0] + last[0]) * proportion, (direction[1] + last[1]) * proportion)
+        draw.arc(last[0], last[1], radius, 0, tau)
+        draw.fill()
+
+@register
+def fern(draw, iterations=5000000, radius=0.002, proportion=0.5):
+    last = (0.0, 0.0)
+    draw.set_source_rgb(1, 1, 1)
+    for _ in range(iterations):
+        p = random_random()
+        if p < 0.01:
+            last = (0.0, 0.16 * last[1])
+        elif p < 0.86:
+            last = (0.85 * last[0] + 0.04 * last[1], -0.04 * last[0] + 0.85 * last[1] + 1.6)
+        elif p < 0.93:
+            last = (0.2 * last[0] - 0.26 * last[1], 0.23 * last[0] + 0.22 * last[1] + 1.6)
+        else:
+            last = (-0.15 * last[0] + 0.28 * last[1], 0.26 * last[0] + 0.24 * last[1] + 0.44)
+        draw.arc(last[0], last[1], radius, 0, tau)
+        draw.fill()
+
 #######################################################################################################################
 
 def parse_args():
